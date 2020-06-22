@@ -21,6 +21,6 @@ Please note:
  * Recording these calls is highly dependent on the juristiction of where you are calling from and whom you are recording, IANAL so look it up and do not rely on me!
 
 TODO:
- [ ] Use throw away numbers vs just one
- [ ] Track which throw away numbers are used with what outgoing scammer numbers
- [ ] Commit the "honeypot" code, to catch the scammer number changes
+ - [ ] Use throw away numbers vs just one
+ - [ ] Track which throw away numbers are used with what outgoing scammer numbers
+ - [ ] Commit the "honeypot" code, to catch the scammer number changes
