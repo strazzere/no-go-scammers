@@ -13,7 +13,7 @@ import (
 const (
 	accountSid = "ACXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 	authToken  = "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-	domain     = "onvoy.doesnt.care" // Change these if it's public facing/whatever
+	domain     = "fcc.doesnt.care" // Change these if it's public facing/whatever
 
 	scammerNumber = "+1202#######"
 	twilioNumber  = "+1202#######"
@@ -26,6 +26,7 @@ const (
 	callRoute           = "/call"
 	recordCallbackRoute = "/rec"
 	twimlRoute          = "/twiml"
+	smsReceivedRoute    = "/sms"
 )
 
 type TwiML struct {
@@ -38,24 +39,54 @@ type TwiML struct {
 func main() {
 	fs := http.FileServer(http.Dir(audioFullDirectory))
 	http.Handle(audioRoute, http.StripPrefix(audioDirectory, fs))
+	http.HandleFunc(smsReceivedRoute, smsReceived)
 	http.HandleFunc(twimlRoute, twiml)
 	http.HandleFunc(callRoute, call)
 	http.HandleFunc(recordCallbackRoute, rec)
 	http.ListenAndServe(":80", nil)
 }
 
+func smsReceived(w http.ResponseWriter, r *http.Request) {
+	fmt.Println(formatRequest(r))
+}
+
+// formatRequest generates ascii representation of a request
+func formatRequest(r *http.Request) string {
+	// Create return string
+	var request []string
+	// Add the request string
+	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
+	request = append(request, url)
+	// Add the host
+	request = append(request, fmt.Sprintf("Host: %v", r.Host))
+	// Loop through headers
+	for name, headers := range r.Header {
+		name = strings.ToLower(name)
+		for _, h := range headers {
+			request = append(request, fmt.Sprintf("%v: %v", name, h))
+		}
+	}
+
+	// If this is a POST, add post data
+	if r.Method == "POST" {
+		r.ParseForm()
+		request = append(request, "\n")
+		request = append(request, r.Form.Encode())
+	}
+	// Return the request as a string
+	return strings.Join(request, "\n")
+}
+
 func twiml(w http.ResponseWriter, r *http.Request) {
 	twiml := `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-	<Say>Oh snap, you're a fake agent! Cool</Say>
-	<Pause length="8"/>
 	<Say>Hello?</Say>
 	<Pause length="2"/>
 	<Say>Hi?</Say>
 	<Pause length="1"/>
 	<Say>Hello!</Say>
 	<Pause length="1"/>
-	<Play loop="30">http://onvoy.doesnt.care/audio/scam.mp3</Play>
+	<Play loop="30">` + transportPrefix + domain + audioRoute + `scam.mp3</Play>
 </Response>`
 
 	w.Header().Set("Content-Type", "application/xml")
@@ -63,7 +94,7 @@ func twiml(w http.ResponseWriter, r *http.Request) {
 }
 
 func rec(w http.ResponseWriter, r *http.Request) {
-	fmt.Println(r)
+	fmt.Println(formatRequest(r))
 }
 
 func call(w http.ResponseWriter, r *http.Request) {
